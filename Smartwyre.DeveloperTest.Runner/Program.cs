@@ -12,6 +12,17 @@ class Program
     {
         var rebateService = CreateRebateService();
 
+        do
+        {
+            RunCalculation(rebateService);
+
+            Console.WriteLine("Press any key to calculate another rebate, or ESC to exit.");
+        }
+        while (Console.ReadKey(intercept: true).Key != ConsoleKey.Escape);
+    }
+
+    private static void RunCalculation(IRebateService rebateService)
+    {
         var request = new CalculateRebateRequest
         {
             RebateIdentifier = ReadRequiredText("Rebate Identifier: "),
@@ -21,8 +32,8 @@ class Program
 
         var result = rebateService.Calculate(request);
 
-        Console.WriteLine(result.Success 
-            ? "Rebate calculated and stored successfully." 
+        Console.WriteLine(result.Success
+            ? "Rebate calculated and stored successfully."
             : "Rebate could not be calculated for this request.");
     }
 
@@ -63,6 +74,6 @@ class Program
             new AmountPerUomCalculator() 
         };
 
-        return new RebateService(new RebateDataStore(), new ProductDataStore(), calculators);
+        return new RebateService(new InMemoryRebateDataStore(), new InMemoryProductDataStore(), calculators);
     }
 }
