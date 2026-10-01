@@ -32,7 +32,7 @@ public class RebateServiceTests
         _calculator.IsValid(_rebate, _product, _request).Returns(true);
         _calculator.Calculate(_rebate, _product, _request).Returns(500m);
 
-        _service = new RebateService(_rebateDataStore, _productDataStore, new[] { _calculator });
+        _service = new RebateService(_rebateDataStore, _productDataStore, [_calculator]);
 
     }
 
