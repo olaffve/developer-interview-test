@@ -1,5 +1,5 @@
 ﻿using System;
-using Smartwyre.DeveloperTest.Data;
+using Smartwyre.DeveloperTest.Runner.SampleData;
 using Smartwyre.DeveloperTest.Services;
 using Smartwyre.DeveloperTest.Services.Calculators;
 using Smartwyre.DeveloperTest.Types;
