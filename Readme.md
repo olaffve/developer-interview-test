@@ -44,3 +44,61 @@ You are free to use any frameworks/NuGet packages that you see fit. You should p
 Feel free to use code comments to describe your changes. You are also welcome to update this readme with any important details for us to consider.
 
 Once you have completed the exercise either ensure your repository is available publicly or contact the hiring manager to set up a private share.
+
+
+---
+
+## Solution Notes
+
+### Issues found in the original code
+
+- The switch on rebate.Incentive ran before the null check, so a missing rebate threw a NullReferenceException. The null checks inside each case were dead code.
+- The FixedCashAmount case never checked whether the product was null, but still read product.SupportedIncentives.
+- The data stores were created with new inside the method, so the service could not be unit tested.
+- A second RebateDataStore instance was created just to save the result.
+- The shared validation (rebate null, product null, supported incentive) was duplicated in every case.
+- The method loaded data, validated, calculated and saved, all in one place.
+- Adding a new incentive type required modifying the switch (Open/Closed violation).
+
+### Design
+
+- **Data store interfaces** (IRebateDataStore, IProductDataStore) are injected into RebateService through the constructor (Dependency Inversion).
+- **One calculator per incentive type** (Services/Calculators). Each class implements IIncentiveCalculator and only contains its own validation rule and formula (Single Responsibility).
+- **RebateService has no switch.** It receives all calculators, indexes them by incentive type in a dictionary, and runs the shared checks once using guard clauses. The dictionary also guarantees there is only one calculator per incentive type.
+- Business rules were kept exactly the same as the original code. The only behavior change is that missing rebates or products now return Success = false instead of throwing.
+- Added the [Flags] attribute to SupportedIncentiveType, since its values are combined.
+
+### How to add a new incentive type
+
+1. Add the value to IncentiveType.
+2. Add the next flag to SupportedIncentiveType (1 << 3).
+3. Create a new class that implements IIncentiveCalculator.
+4. Register it in CreateRebateService in the Runner.
+
+RebateService does not need to change.
+
+### Tests
+
+- Calculator tests verify each validation rule and formula in isolation.
+- RebateService tests mock all dependencies with NSubstitute. Each test breaks one condition and checks that the result fails and nothing is stored.
+- One test uses a real calculator to verify the pieces work together.
+
+Run them with:
+
+    dotnet test
+
+### Running the console app
+
+    dotnet run --project .\Smartwyre.DeveloperTest.Runner
+
+The original data stores are placeholders that always return empty objects, so the Runner uses in-memory data stores with sample data (Runner/SampleData). This also shows how the service works with any implementation of the interfaces.
+
+| Rebate   | Product  | Volume | Result                |
+|----------|----------|--------|-----------------------|
+| REB-CASH | PROD-001 | 10     | 500.00                |
+| REB-RATE | PROD-001 | 10     | 50.00                 |
+| REB-UOM  | PROD-001 | 300    | 600.00                |
+| REB-UOM  | PROD-002 | 300    | 600.00                |
+| REB-CASH | PROD-002 | 10     | Fails (not supported) |
+
+After each calculation, press any key to run another one, or Esc to exit.
